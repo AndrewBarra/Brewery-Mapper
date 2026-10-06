@@ -1,6 +1,6 @@
 {
-  "name": "Brewery Mapper",
-  "short_name": "Breweries",
+  "name": "Pint Pins: Brewery Mapper",
+  "short_name": "Pint Pins",
   "description": "Log the breweries you've visited and see them on a map of the US.",
   "start_url": "./",
   "scope": "./",

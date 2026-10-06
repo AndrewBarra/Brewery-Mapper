@@ -37,7 +37,9 @@ body {
 
 #map { flex: 1; min-height: 0; }
 
-h1 { font-size: 1.35rem; margin: 0; }
+h1 { font-size: 1.35rem; margin: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+h1 .logo { width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0; }
+h1 .subtitle { font-weight: 500; color: var(--muted); margin-left: -6px; }
 h2 { margin: 0; }
 
 .section-label {
