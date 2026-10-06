@@ -251,7 +251,6 @@ dialog.photo-viewer::backdrop { background: rgba(0,0,0,0.85); }
 }
 
 /* Search fallbacks and manual entry */
-.badge.map { background: #1f6fdc; }
 .results li.extras { background: #faf6ef; }
 .results button.extra { font-size: 0.9rem; color: var(--text); }
 .results button.extra + button.extra { border-top: 1px solid var(--border); }
@@ -269,16 +268,3 @@ select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .field-zip { max-width: 160px; }
 .optional { font-style: normal; font-weight: 400; color: var(--muted); }
 
-/* Nearby breweries layer */
-.nearby-control a.nearby-btn { font-size: 0.75rem; font-weight: 700; width: auto; padding: 0 8px; white-space: nowrap; }
-.nearby-control a.nearby-btn.active { background: #1f6fdc; color: #fff; }
-.nearby-status {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  max-width: calc(100vw - 40px);
-}
-.nearby-status[hidden] { display: none; }
