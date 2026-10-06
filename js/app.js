@@ -1,5 +1,6 @@
 import * as db from './db.js';
-import { searchBreweries, searchPlaces, geocode } from './api.js';
+import { searchBreweries, searchPhoton, searchPlaces, geocode, reverseGeocode, sameBrewery } from './api.js';
+import { initNearby } from './nearby.js';
 import { shrinkPhoto } from './photos.js';
 
 // ---- Map ----------------------------------------------------------------
@@ -65,6 +66,7 @@ async function loadAll() {
   renderMarkers();
   renderList();
   renderStats();
+  nearby.refresh();
 }
 
 function visitsOf(id) { return state.visits.get(id) || []; }
@@ -221,33 +223,32 @@ let lastQuery = '';
 async function runSearch(q) {
   if (searchAbort) searchAbort.abort();
   searchAbort = new AbortController();
+  const { signal } = searchAbort;
   lastQuery = q;
   searchStatus.textContent = 'Searching…';
-  try {
-    lastResults = await searchBreweries(q, searchAbort.signal);
-  } catch (err) {
-    if (err.name === 'AbortError') return;
-    lastResults = [];
-    renderResults(q, { failed: true });
-    return;
-  }
-  renderResults(q);
+  // Both sources at once: the brewery directory, and OpenStreetMap places for what it's missing.
+  const [directory, places] = await Promise.allSettled([searchBreweries(q, signal), searchPhoton(q, signal)]);
+  if (signal.aborted) return;
+  const fromDirectory = directory.status === 'fulfilled' ? directory.value : [];
+  const fromMap = places.status === 'fulfilled' ? places.value : [];
+  lastResults = [...fromDirectory, ...fromMap.filter((p) => !fromDirectory.some((d) => sameBrewery(d, p)))];
+  renderResults(q, { failed: directory.status === 'rejected' && places.status === 'rejected' });
 }
 
 // Open Brewery DB misses many breweries, so the list always ends with ways to find the rest.
 function renderResults(q, { failed = false, mapSearched = false, mapFailed = false } = {}) {
-  if (failed) searchStatus.textContent = 'Brewery search is unavailable right now. Try searching map places instead.';
+  if (failed) searchStatus.textContent = 'Search is unavailable right now. Check your connection, or add the brewery yourself.';
   else if (mapFailed) searchStatus.textContent = 'Map search is unavailable right now. You can still add it yourself.';
   else if (!lastResults.length) searchStatus.textContent = mapSearched ? `No places found for “${q}”.` : `No breweries found for “${q}”.`;
   else searchStatus.textContent = '';
 
   const items = lastResults.map((b, i) => `
     <li><button type="button" data-index="${i}">
-      <div><span class="item-name">${esc(b.name)}</span>${state.breweries.has(b.id) ? '<span class="badge">Logged</span>' : ''}${b.source === 'map' ? '<span class="badge map">Map</span>' : ''}</div>
+      <div><span class="item-name">${esc(b.name)}</span>${findLogged(b) ? '<span class="badge">Logged</span>' : ''}${b.source === 'map' ? '<span class="badge map">Map</span>' : ''}</div>
       <div class="item-sub">${esc(fullAddress(b) || cityState(b) || 'No address listed')}</div>
     </button></li>`);
   const extras = [];
-  if (!mapSearched) extras.push('<button type="button" class="extra" data-action="map">🔍 Don’t see it? <strong>Search map places</strong></button>');
+  if (!mapSearched) extras.push('<button type="button" class="extra" data-action="map">🔍 Don’t see it? <strong>Search more places</strong></button>');
   extras.push('<button type="button" class="extra" data-action="manual">✏️ <strong>Add it yourself</strong> with name and address</button>');
   resultsEl.innerHTML = items.join('') + `<li class="extras">${extras.join('')}</li>`;
 }
@@ -256,7 +257,7 @@ async function runPlaceSearch() {
   const q = lastQuery;
   if (searchAbort) searchAbort.abort();
   searchAbort = new AbortController();
-  searchStatus.textContent = 'Searching map places…';
+  searchStatus.textContent = 'Searching more places…';
   try {
     lastResults = await searchPlaces(q, searchAbort.signal);
   } catch (err) {
@@ -286,13 +287,24 @@ resultsEl.addEventListener('click', (e) => {
   if (!btn) return;
   const picked = lastResults[Number(btn.dataset.index)];
   clearSearch();
-  if (state.breweries.has(picked.id)) {
-    focusBrewery(state.breweries.get(picked.id));
-    openDetail(picked.id);
+  pickBrewery(picked);
+});
+
+// Opens a brewery already on your map, or starts logging a new one.
+function pickBrewery(picked) {
+  const logged = findLogged(picked);
+  if (logged) {
+    focusBrewery(logged);
+    openDetail(logged.id);
   } else {
     openVisitForm(picked, null);
   }
-});
+}
+
+function findLogged(b) {
+  if (state.breweries.has(b.id)) return state.breweries.get(b.id);
+  return [...state.breweries.values()].find((logged) => sameBrewery(logged, b)) || null;
+}
 
 // ---- Add a brewery by hand ----------------------------------------------
 
@@ -423,6 +435,11 @@ visitForm.addEventListener('submit', async (e) => {
         const spot = await geocode(brewery);
         if (!spot) throw new Error('Couldn’t find this address on the map. Check the city and state and try again.');
         Object.assign(brewery, spot);
+      }
+      if (!brewery.city || !brewery.state) {
+        saveBtn.textContent = 'Looking up address…';
+        const found = await reverseGeocode(brewery.lat, brewery.lng).catch(() => null);
+        if (found) for (const key of Object.keys(found)) if (!brewery[key]) brewery[key] = found[key];
       }
       await db.saveBrewery({ ...brewery, addedAt: new Date().toISOString() });
     }
@@ -564,6 +581,17 @@ function openPhoto(src) {
   viewer.showModal();
 }
 photoPreviews.addEventListener('click', (e) => { if (e.target.tagName === 'IMG') openPhoto(e.target.src); });
+
+// ---- Nearby breweries layer ---------------------------------------------
+
+const nearby = initNearby({
+  map,
+  findLogged,
+  onPick: (b) => {
+    map.closePopup();
+    pickBrewery(b);
+  },
+});
 
 // ---- Start --------------------------------------------------------------
 
