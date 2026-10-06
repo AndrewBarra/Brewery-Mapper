@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brewery Mapper</title>
+  <meta name="description" content="Log the breweries you've visited and see them on a map of the US.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍺</text></svg>">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <aside id="panel">
+    <header class="panel-header">
+      <h1>🍺 Brewery Mapper</h1>
+    </header>
+
+    <section id="stats" class="stats" aria-label="Stats"></section>
+
+    <section class="add">
+      <label for="search" class="section-label">Log a brewery</label>
+      <input id="search" type="search" placeholder="Search breweries by name…" autocomplete="off">
+      <p id="search-status" class="hint" aria-live="polite"></p>
+      <ul id="results" class="results"></ul>
+    </section>
+
+    <section class="mine">
+      <div class="mine-header">
+        <h2 class="section-label">My breweries</h2>
+        <input id="filter" type="search" placeholder="Filter" aria-label="Filter my breweries">
+      </div>
+      <ul id="list" class="list"></ul>
+    </section>
+  </aside>
+
+  <main id="map" aria-label="Map of breweries"></main>
+
+  <dialog id="detail" class="sheet"></dialog>
+
+  <dialog id="visit-dialog" class="sheet">
+    <form id="visit-form" method="dialog">
+      <header class="sheet-header">
+        <div>
+          <h2 id="visit-title">Log a visit</h2>
+          <p id="visit-subtitle" class="muted"></p>
+        </div>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </header>
+
+      <label class="field">
+        <span>Date</span>
+        <input type="date" name="date" required>
+      </label>
+
+      <fieldset class="field">
+        <legend>Rating</legend>
+        <div class="stars-input">
+          <input type="radio" name="rating" id="r5" value="5"><label for="r5" title="5 stars">★</label>
+          <input type="radio" name="rating" id="r4" value="4"><label for="r4" title="4 stars">★</label>
+          <input type="radio" name="rating" id="r3" value="3"><label for="r3" title="3 stars">★</label>
+          <input type="radio" name="rating" id="r2" value="2"><label for="r2" title="2 stars">★</label>
+          <input type="radio" name="rating" id="r1" value="1"><label for="r1" title="1 star">★</label>
+        </div>
+        <button type="button" id="clear-rating" class="link-btn">No rating</button>
+      </fieldset>
+
+      <label class="field">
+        <span>Notes / beers tried</span>
+        <textarea name="notes" rows="4" placeholder="Hazy IPA was great, try the stout next time…"></textarea>
+      </label>
+
+      <div class="field">
+        <span>Photos</span>
+        <div id="photo-previews" class="photo-grid"></div>
+        <label class="btn secondary file-btn">
+          Add photos
+          <input id="photo-input" type="file" accept="image/*" multiple hidden>
+        </label>
+      </div>
+
+      <p id="visit-error" class="error" aria-live="polite"></p>
+
+      <footer class="sheet-footer">
+        <button type="button" class="btn secondary" data-close>Cancel</button>
+        <button type="submit" class="btn primary" id="visit-save">Save visit</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="photo-viewer" class="photo-viewer">
+    <img alt="">
+    <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+  </dialog>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
