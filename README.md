@@ -1,4 +1,4 @@
-# Brewery Mapper
+# Pint Pins: Brewery Mapper
 
 Log the breweries you've been to and see them on a map of the US. You can zoom from the whole country down to the street a brewery is on.
 
