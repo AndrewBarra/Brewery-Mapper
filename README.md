@@ -49,5 +49,7 @@ js/app.js         Map, list, stats, search, and visit forms
 js/db.js          IndexedDB storage (breweries, visits, photos)
 js/api.js         Open Brewery DB search + Nominatim address lookup
 js/photos.js      Photo resizing
+icons/            App and home-screen icons (icon.svg is the source)
+manifest.webmanifest  Home-screen app settings
 vendor/leaflet/   Leaflet 1.9.4 map library (BSD-2-Clause)
 ```
