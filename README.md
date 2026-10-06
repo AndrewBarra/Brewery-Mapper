@@ -4,7 +4,9 @@ Log the breweries you've been to and see them on a map of the US. You can zoom f
 
 ## Features
 
-- **Search by name** to log a brewery. Results come from [Open Brewery DB](https://www.openbrewerydb.org/), a free database of US breweries.
+- **Search by name** to log a brewery. As you type, it searches [Open Brewery DB](https://www.openbrewerydb.org/) (a free US brewery directory) and OpenStreetMap places through [Photon](https://photon.komoot.io/). Map results have a blue **Map** label, and duplicates across the two are merged.
+- **Still not listed?** Below the results you can **search more places** (OpenStreetMap's Nominatim) or **add it yourself** with a name and address. If the exact address can't be found, the pin goes at the center of the city, and the brewery's page says so.
+- **🍺 Nearby** map button shows every brewery OpenStreetMap knows of in the area you're viewing, as hollow blue pins. Ones you've already logged are hidden. Tap a pin to log a visit. Zoom in to about city level for it to load. The button stays on or off the way you left it.
 - **One pin per brewery, many visits.** Each visit has a date, a 1–5 star rating, notes and beers tried, and photos.
 - **Map** with OpenStreetMap tiles, from the full US (use the **US** button) down to street level.
 - **My breweries list.** Filter it, and click a brewery to fly to its spot on the map.
@@ -47,7 +49,8 @@ index.html        Page markup and dialogs
 css/styles.css    Styles
 js/app.js         Map, list, stats, search, and visit forms
 js/db.js          IndexedDB storage (breweries, visits, photos)
-js/api.js         Open Brewery DB search + Nominatim address lookup
+js/api.js         Data sources: Open Brewery DB, Photon, Nominatim, Overpass
+js/nearby.js      "Nearby" breweries map layer
 js/photos.js      Photo resizing
 icons/            App and home-screen icons (icon.svg is the source)
 manifest.webmanifest  Home-screen app settings

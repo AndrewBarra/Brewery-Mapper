@@ -95,6 +95,100 @@
     </form>
   </dialog>
 
+  <dialog id="manual-dialog" class="sheet">
+    <form id="manual-form">
+      <header class="sheet-header">
+        <div>
+          <h2>Add a brewery</h2>
+          <p class="muted">We’ll find it on the map from the address.</p>
+        </div>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </header>
+
+      <label class="field">
+        <span>Brewery name</span>
+        <input type="text" name="name" required autocomplete="off">
+      </label>
+      <label class="field">
+        <span>Street address <em class="optional">(recommended for an exact pin)</em></span>
+        <input type="text" name="street" placeholder="804 Winston St" autocomplete="off">
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span>City</span>
+          <input type="text" name="city" required autocomplete="off">
+        </label>
+        <label class="field">
+          <span>State</span>
+          <select name="state" required>
+            <option value="">Choose…</option>
+            <option>Alabama</option>
+            <option>Alaska</option>
+            <option>Arizona</option>
+            <option>Arkansas</option>
+            <option>California</option>
+            <option>Colorado</option>
+            <option>Connecticut</option>
+            <option>Delaware</option>
+            <option>District of Columbia</option>
+            <option>Florida</option>
+            <option>Georgia</option>
+            <option>Hawaii</option>
+            <option>Idaho</option>
+            <option>Illinois</option>
+            <option>Indiana</option>
+            <option>Iowa</option>
+            <option>Kansas</option>
+            <option>Kentucky</option>
+            <option>Louisiana</option>
+            <option>Maine</option>
+            <option>Maryland</option>
+            <option>Massachusetts</option>
+            <option>Michigan</option>
+            <option>Minnesota</option>
+            <option>Mississippi</option>
+            <option>Missouri</option>
+            <option>Montana</option>
+            <option>Nebraska</option>
+            <option>Nevada</option>
+            <option>New Hampshire</option>
+            <option>New Jersey</option>
+            <option>New Mexico</option>
+            <option>New York</option>
+            <option>North Carolina</option>
+            <option>North Dakota</option>
+            <option>Ohio</option>
+            <option>Oklahoma</option>
+            <option>Oregon</option>
+            <option>Pennsylvania</option>
+            <option>Puerto Rico</option>
+            <option>Rhode Island</option>
+            <option>South Carolina</option>
+            <option>South Dakota</option>
+            <option>Tennessee</option>
+            <option>Texas</option>
+            <option>Utah</option>
+            <option>Vermont</option>
+            <option>Virginia</option>
+            <option>Washington</option>
+            <option>West Virginia</option>
+            <option>Wisconsin</option>
+            <option>Wyoming</option>
+          </select>
+        </label>
+      </div>
+      <label class="field field-zip">
+        <span>ZIP <em class="optional">(optional)</em></span>
+        <input type="text" name="zip" inputmode="numeric" maxlength="10" autocomplete="off">
+      </label>
+
+      <footer class="sheet-footer">
+        <button type="button" class="btn secondary" data-close>Cancel</button>
+        <button type="submit" class="btn primary">Next: log a visit</button>
+      </footer>
+    </form>
+  </dialog>
+
   <dialog id="photo-viewer" class="photo-viewer">
     <img alt="">
     <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
