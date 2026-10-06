@@ -1,5 +1,5 @@
 import * as db from './db.js';
-import { searchBreweries, geocode } from './api.js';
+import { searchBreweries, searchPlaces, geocode } from './api.js';
 import { shrinkPhoto } from './photos.js';
 
 // ---- Map ----------------------------------------------------------------
@@ -216,39 +216,116 @@ searchEl.addEventListener('input', () => {
   searchTimer = setTimeout(() => runSearch(q), 300);
 });
 
+let lastQuery = '';
+
 async function runSearch(q) {
   if (searchAbort) searchAbort.abort();
   searchAbort = new AbortController();
+  lastQuery = q;
   searchStatus.textContent = 'Searching…';
   try {
     lastResults = await searchBreweries(q, searchAbort.signal);
   } catch (err) {
     if (err.name === 'AbortError') return;
-    searchStatus.textContent = 'Search is unavailable right now. Check your connection and try again.';
-    resultsEl.innerHTML = '';
+    lastResults = [];
+    renderResults(q, { failed: true });
     return;
   }
-  searchStatus.textContent = lastResults.length ? '' : `No US breweries found for “${q}”.`;
-  resultsEl.innerHTML = lastResults.map((b, i) => `
-    <li><button type="button" data-index="${i}">
-      <div><span class="item-name">${esc(b.name)}</span>${state.breweries.has(b.id) ? '<span class="badge">Logged</span>' : ''}</div>
-      <div class="item-sub">${esc(fullAddress(b) || cityState(b))}</div>
-    </button></li>`).join('');
+  renderResults(q);
 }
 
-resultsEl.addEventListener('click', (e) => {
-  const btn = e.target.closest('button[data-index]');
-  if (!btn) return;
-  const picked = lastResults[Number(btn.dataset.index)];
+// Open Brewery DB misses many breweries, so the list always ends with ways to find the rest.
+function renderResults(q, { failed = false, mapSearched = false, mapFailed = false } = {}) {
+  if (failed) searchStatus.textContent = 'Brewery search is unavailable right now. Try searching map places instead.';
+  else if (mapFailed) searchStatus.textContent = 'Map search is unavailable right now. You can still add it yourself.';
+  else if (!lastResults.length) searchStatus.textContent = mapSearched ? `No places found for “${q}”.` : `No breweries found for “${q}”.`;
+  else searchStatus.textContent = '';
+
+  const items = lastResults.map((b, i) => `
+    <li><button type="button" data-index="${i}">
+      <div><span class="item-name">${esc(b.name)}</span>${state.breweries.has(b.id) ? '<span class="badge">Logged</span>' : ''}${b.source === 'map' ? '<span class="badge map">Map</span>' : ''}</div>
+      <div class="item-sub">${esc(fullAddress(b) || cityState(b) || 'No address listed')}</div>
+    </button></li>`);
+  const extras = [];
+  if (!mapSearched) extras.push('<button type="button" class="extra" data-action="map">🔍 Don’t see it? <strong>Search map places</strong></button>');
+  extras.push('<button type="button" class="extra" data-action="manual">✏️ <strong>Add it yourself</strong> with name and address</button>');
+  resultsEl.innerHTML = items.join('') + `<li class="extras">${extras.join('')}</li>`;
+}
+
+async function runPlaceSearch() {
+  const q = lastQuery;
+  if (searchAbort) searchAbort.abort();
+  searchAbort = new AbortController();
+  searchStatus.textContent = 'Searching map places…';
+  try {
+    lastResults = await searchPlaces(q, searchAbort.signal);
+  } catch (err) {
+    if (err.name === 'AbortError') return;
+    lastResults = [];
+    renderResults(q, { mapSearched: true, mapFailed: true });
+    return;
+  }
+  renderResults(q, { mapSearched: true });
+}
+
+function clearSearch() {
   searchEl.value = '';
   resultsEl.innerHTML = '';
   searchStatus.textContent = '';
+}
+
+resultsEl.addEventListener('click', (e) => {
+  const action = e.target.closest('button[data-action]')?.dataset.action;
+  if (action === 'map') return runPlaceSearch();
+  if (action === 'manual') {
+    const name = lastQuery;
+    clearSearch();
+    return openManualForm(name);
+  }
+  const btn = e.target.closest('button[data-index]');
+  if (!btn) return;
+  const picked = lastResults[Number(btn.dataset.index)];
+  clearSearch();
   if (state.breweries.has(picked.id)) {
     focusBrewery(state.breweries.get(picked.id));
     openDetail(picked.id);
   } else {
     openVisitForm(picked, null);
   }
+});
+
+// ---- Add a brewery by hand ----------------------------------------------
+
+const manualDialog = document.getElementById('manual-dialog');
+const manualForm = document.getElementById('manual-form');
+closeOnBackdrop(manualDialog);
+
+function openManualForm(name) {
+  manualForm.reset();
+  manualForm.name.value = name;
+  manualDialog.showModal();
+}
+
+manualForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const f = manualForm;
+  const brewery = {
+    id: `custom-${db.newId()}`,
+    name: f.name.value.trim(),
+    type: '',
+    street: f.street.value.trim(),
+    city: f.city.value.trim(),
+    state: f.state.value,
+    postalCode: f.zip.value.trim(),
+    country: 'United States',
+    lat: null,
+    lng: null,
+    website: '',
+    phone: '',
+    source: 'manual',
+  };
+  manualDialog.close();
+  openVisitForm(brewery, null);
 });
 
 // ---- Visit form ---------------------------------------------------------
@@ -344,7 +421,7 @@ visitForm.addEventListener('submit', async (e) => {
       if (brewery.lat == null || brewery.lng == null) {
         saveBtn.textContent = 'Finding on map…';
         const spot = await geocode(brewery);
-        if (!spot) throw new Error('Couldn’t find this brewery’s location on the map.');
+        if (!spot) throw new Error('Couldn’t find this address on the map. Check the city and state and try again.');
         Object.assign(brewery, spot);
       }
       await db.saveBrewery({ ...brewery, addedAt: new Date().toISOString() });
@@ -431,6 +508,7 @@ async function openDetail(id) {
       <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
     </header>
     <p class="detail-address">${esc(fullAddress(b))}</p>
+    ${b.approximate ? '<p class="hint">Couldn’t find the exact address, so the pin is at the center of the city.</p>' : ''}
     <div class="detail-links">
       ${b.website ? `<a href="${esc(b.website)}" target="_blank" rel="noopener">Website</a>` : ''}
       <a href="${esc(mapsUrl)}" target="_blank" rel="noopener">Directions</a>

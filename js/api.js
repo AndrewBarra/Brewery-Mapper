@@ -37,19 +37,49 @@ export async function searchBreweries(query, signal) {
     .filter((b) => !b.country || b.country === 'United States');
 }
 
-// Some breweries in the database have no coordinates; look up their address instead.
+// Some breweries have no coordinates; look them up by address, then by name.
+// Falls back to the city center, flagged as approximate.
 export async function geocode(brewery) {
   const attempts = [
-    [brewery.street, brewery.city, brewery.state, brewery.postalCode],
-    [brewery.city, brewery.state],
+    [[brewery.street, brewery.city, brewery.state, brewery.postalCode], false],
+    [[brewery.name, brewery.city, brewery.state], false],
+    [[brewery.city, brewery.state], true],
   ];
-  for (const parts of attempts) {
+  for (const [parts, approximate] of attempts) {
+    if (!parts[0]) continue;
     const q = parts.filter(Boolean).join(', ');
-    if (!q) continue;
     const res = await fetch(`${NOMINATIM}?format=json&limit=1&countrycodes=us&q=${encodeURIComponent(q)}`);
     if (!res.ok) continue;
     const [hit] = await res.json();
-    if (hit) return { lat: parseFloat(hit.lat), lng: parseFloat(hit.lon) };
+    if (hit) return { lat: parseFloat(hit.lat), lng: parseFloat(hit.lon), approximate };
   }
   return null;
+}
+
+// Searches OpenStreetMap places, for breweries Open Brewery DB doesn't list.
+export async function searchPlaces(query, signal) {
+  const url = `${NOMINATIM}?format=jsonv2&addressdetails=1&limit=10&countrycodes=us&q=${encodeURIComponent(query)}`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`Place search failed (${res.status})`);
+  const hits = await res.json();
+  return hits
+    .filter((h) => h.name)
+    .map((h) => {
+      const a = h.address || {};
+      return {
+        id: `osm-${h.osm_type}-${h.osm_id}`,
+        name: h.name,
+        type: '',
+        street: [a.house_number, a.road].filter(Boolean).join(' '),
+        city: a.city || a.town || a.village || a.hamlet || a.suburb || a.county || '',
+        state: a.state || '',
+        postalCode: (a.postcode || '').split('-')[0],
+        country: 'United States',
+        lat: parseFloat(h.lat),
+        lng: parseFloat(h.lon),
+        website: '',
+        phone: '',
+        source: 'map',
+      };
+    });
 }

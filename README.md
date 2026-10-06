@@ -5,6 +5,7 @@ Log the breweries you've been to and see them on a map of the US. You can zoom f
 ## Features
 
 - **Search by name** to log a brewery. Results come from [Open Brewery DB](https://www.openbrewerydb.org/), a free database of US breweries.
+- **Brewery not listed?** Open Brewery DB misses many breweries. Below the results you can **search map places** (OpenStreetMap) or **add it yourself** with a name and address. If the exact address can't be found, the pin goes at the center of the city, and the brewery's page says so.
 - **One pin per brewery, many visits.** Each visit has a date, a 1–5 star rating, notes and beers tried, and photos.
 - **Map** with OpenStreetMap tiles, from the full US (use the **US** button) down to street level.
 - **My breweries list.** Filter it, and click a brewery to fly to its spot on the map.
@@ -47,7 +48,7 @@ index.html        Page markup and dialogs
 css/styles.css    Styles
 js/app.js         Map, list, stats, search, and visit forms
 js/db.js          IndexedDB storage (breweries, visits, photos)
-js/api.js         Open Brewery DB search + Nominatim address lookup
+js/api.js         Open Brewery DB search, OpenStreetMap place search and address lookup
 js/photos.js      Photo resizing
 icons/            App and home-screen icons (icon.svg is the source)
 manifest.webmanifest  Home-screen app settings
